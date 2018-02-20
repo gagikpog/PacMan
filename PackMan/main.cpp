@@ -1,22 +1,29 @@
-#include <iostream>
-#include <vector>
-#include <GL\freeglut.h>
-#include <fstream>
+
+#include "Header.h"
 
 using namespace std;
 
 float WndW = 400.f, WndH = 400.f;
-vector<vector<bool>> Matrix;
+vector<vector<Cubes>> Matrix;
+vector<Spook> Spooks(1);
+Man packman;
+
 
 void Init();
 void open();
 
-void Draw(float x,float  y,float w,float h,bool b)
+void Draw(float x,float  y,float w,float h, Cubes b)
 {
 	glBegin(GL_QUADS);
-	if(b)
-		glColor3ub(0, 0, 0);
-	else  glColor3ub(100, 100, 0);
+	switch (b)
+	{
+	case C_wall:glColor3ub(0, 10,20);
+		break;
+	case C_track:glColor3ub(0, 150,200);
+		break;
+	case C_void:glColor3ub(0, 180, 200);
+		break;
+	}
 	glVertex2f(x, y);
 	glVertex2f(x+w, y);
 	glVertex2f(x+w, y+h);
@@ -31,16 +38,40 @@ void Display()
 	
 	if (Matrix.size()) {
 		float w = WndW / Matrix[0].size();
-		float h = WndH / Matrix.size();
+		float h = WndH / (Matrix.size());
 		for (size_t i = 0; i < Matrix.size(); i++)
 		{
 			for (size_t j = 0; j < Matrix[i].size(); j++)
 			{
-				Draw(j*w,WndH-i*h,w,h,Matrix[i][j]);
+				Draw(j*w,WndH-i*h-h,w,h,Matrix[i][j]);
 			}
 		}
+		for (size_t i = 0; i < Spooks.size(); i++)
+			Spooks[i].Draw(w,h,WndH);
+		packman.Draw(w, h,WndH);
 	}
+
 	glutSwapBuffers();
+}
+
+void Keys(int key,int ax,int ay)
+{
+	switch (key)
+	{// d_up, d_left, d_down, d_right
+	case GLUT_KEY_UP: packman.SetDirect(d_up); break;
+	case GLUT_KEY_DOWN: packman.SetDirect(d_down); break;
+	case GLUT_KEY_LEFT: packman.SetDirect(d_left); break;
+	case GLUT_KEY_RIGHT: packman.SetDirect(d_right); break;
+	}	
+}
+
+void NextStep(int t = 0)
+{
+	glutPostRedisplay();
+	glutTimerFunc(100, NextStep, 0);
+	for (size_t i = 0; i < Spooks.size(); i++)
+		Spooks[i].Step();
+	packman.Step();
 }
 
 int main(int argc ,char** argv)
@@ -57,6 +88,7 @@ int main(int argc ,char** argv)
 
 	Init();
 
+	glutSpecialFunc(Keys);
 	glutDisplayFunc(Display);
 	glutMainLoop();
 	return 0;
@@ -65,6 +97,10 @@ int main(int argc ,char** argv)
 void Init()
 {
 	open();
+	packman.Matrix = &Matrix;
+	for (size_t i = 0; i < Spooks.size(); i++)
+		Spooks[i].Matrix = &Matrix;
+	NextStep();
 }
 
 void open()
@@ -77,11 +113,11 @@ void open()
 		fin >> m >> n;
 		for (size_t i = 0; i < m; i++)
 		{
-			Matrix.push_back(vector<bool>());
+			Matrix.push_back(vector<Cubes>());
 			for (size_t j = 0; j < n; j++)
 			{
 				fin >> t;
-				Matrix.back().push_back(t - '0');
+				Matrix.back().push_back(Cubes(t - '0'));
 			}
 		}
 	}
