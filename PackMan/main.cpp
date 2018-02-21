@@ -1,13 +1,11 @@
-
 #include "Header.h"
 
 using namespace std;
 
 float WndW = 400.f, WndH = 400.f;
 vector<vector<Cubes>> Matrix;
-vector<Spook> Spooks(1);
-Man packman;
-
+vector<Spook> Spooks(4, &Matrix);
+Man packman(&Matrix);
 
 void Init();
 void open();
@@ -96,10 +94,8 @@ int main(int argc ,char** argv)
 
 void Init()
 {
+	srand(time(NULL));
 	open();
-	packman.Matrix = &Matrix;
-	for (size_t i = 0; i < Spooks.size(); i++)
-		Spooks[i].Matrix = &Matrix;
 	NextStep();
 }
 

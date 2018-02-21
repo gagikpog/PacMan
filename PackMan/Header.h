@@ -3,24 +3,39 @@
 #include <vector>
 #include <GL\freeglut.h>
 #include <fstream>
+#include <ctime>
 
 enum Cubes
 {
 	C_void,C_wall,C_track
 };
+
 enum M_direct
 {
 	d_up,d_left,d_down,d_right
 };
 
+M_direct& operator!(M_direct& f)
+{
+	switch (f)
+	{
+	case M_direct::d_up: return f = M_direct::d_down;
+	case M_direct::d_down: return f = M_direct::d_up;
+	case M_direct::d_left: return f = M_direct::d_right;
+	case M_direct::d_right: return f = M_direct::d_left;
+	}
+}
+
 class Man
 {
 public:
-	Man() {}
+	Man(std::vector<std::vector<Cubes>>* matrix) 
+	{
+	Matrix = matrix;
+	}
 	~Man() {}
 	int x = 3, y = 5;
 	
-	std::vector<std::vector<Cubes>>* Matrix;
 	void Step()
 	{
 		switch (nextdir)
@@ -91,22 +106,21 @@ public:
 		glVertex2f(w*x+w*4, wndh -h- h*y+h*4);
 		glEnd();
 	}
-
 	void SetDirect(M_direct d)
 	{
 		nextdir = d;
 	}
 
 protected:
+	std::vector<std::vector<Cubes>>* Matrix;
 	M_direct nextdir = d_left;
 	M_direct direct = d_right;
 };
 
-
 class Spook:public Man
 {
 public:
-	Spook() 
+	Spook(std::vector<std::vector<Cubes>>* matrix):Man(matrix)
 	{
 		x = 24;
 		y = 5;
@@ -124,10 +138,31 @@ public:
 	}
 	void Step()
 	{
-		if (nextdir == direct)
-			nextdir = (M_direct)(rand() % 4);
+
+		std::vector<M_direct>arr;
+
+		if ((*Matrix)[y + 1][x] == C_track && direct != d_up)
+			arr.push_back(d_down);
+
+		if ((*Matrix)[y - 1][x] == C_track && direct != d_down)
+			arr.push_back(d_up);
+
+		if (x < (*Matrix)[0].size() - 1)
+			if ((*Matrix)[y][x + 1] == C_track && direct != d_left)
+				arr.push_back(d_right);
+
+		if (x > 0)
+			if ((*Matrix)[y][x - 1] == C_track && direct != d_right)
+				arr.push_back(d_left);
+
+		if (arr.empty())
+			nextdir = !direct;
+		else 
+			nextdir = arr[rand() % (arr.size())];
+
 		Man::Step();
 	}
+	
 private:
 	void SetDirect(M_direct d) {}
 };
