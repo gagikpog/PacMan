@@ -11,6 +11,16 @@ Game_stat Game = G_game;
 void Init();
 void Open();
 void NewGame();
+void NextStep(int t = 0);
+
+void Sprint(int x, int y, char *st)
+{
+	int l, i;
+	l = strlen(st);
+	glRasterPos2i(x, y); 
+	for (i = 0; i < l; i++) 
+		glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, st[i]);
+}
 
 void CollisionDetection()
 {
@@ -29,6 +39,26 @@ void CollisionDetection()
 	}
 }
 
+bool WinGame()
+{
+	static int i = 0;
+	if (Matrix.empty())
+		return 0;
+	int size = Matrix.size()*Matrix[0].size();
+
+	while (i < size &&( Matrix[i/Matrix[0].size()][i%Matrix[0].size()] != C_drug &&  Matrix[i / Matrix[0].size()][i%Matrix[0].size()] != C_food))
+	{
+		i++;
+	}
+
+	if (i == size) 
+	{
+		i = 0;
+		return 1;
+	}
+	return 0;
+}
+
 void Draw(float x,float  y,float w,float h, Cubes b)
 {
 	glBegin(GL_QUADS);
@@ -36,13 +66,22 @@ void Draw(float x,float  y,float w,float h, Cubes b)
 	{
 	case C_wall:glColor3ub(0, 10,20);
 		break;
-	case C_track:glColor3ub(0, 150,200);
-		break;
 	case C_void:glColor3ub(0, 180, 200);
 		break;
-	case C_food:glColor3ub(100, 220, 200);
+	case C_food:glColor3ub(255, 255, 255);
+		glVertex2f(x + w  , y + h);
+		glVertex2f(x + w*2, y + h);
+		glVertex2f(x + w*2, y + h*2);
+		glVertex2f(x + w  , y + h*2);
+	//	break;
+	case C_track:glColor3ub(0, 150,200);
 		break;
 	case C_drug:glColor3ub(255, 255, 0);
+		glVertex2f(x + w, y + h);
+		glVertex2f(x + w * 2, y + h);
+		glVertex2f(x + w * 2, y + h * 2);
+		glVertex2f(x + w, y + h * 2);
+		glColor3ub(0, 150, 200);
 		break;
 	}
 	glVertex2f(x, y);
@@ -72,16 +111,48 @@ void Display()
 		packman.Draw(w, h,WndH);
 	}
 
+	glColor3f(1, 1, 1);
+	switch (Game)
+	{
+	case G_game:
+		break;
+	case G_pause:
+		Sprint(WndW / 2 - 30, WndH / 2 + 5, "Pause");
+		break;
+	case G_win:
+		Sprint(WndW / 2 - 20, WndH / 2 + 5, "Win");
+		break;
+	case G_over:
+		Sprint(WndW / 2 - 30, WndH / 2 + 15, "Game");
+		Sprint(WndW / 2 - 25, WndH / 2 - 5, "over");
+		break;
+	}
+	
+
 	glutSwapBuffers();
 }
 
 void Keys(unsigned char key, int ax, int ay)
 {
-	if (key == 'r')
+	if (key == 'r' && (Game == G_over || Game == G_win))
 	{
 		NewGame();
 	}
+	if (key == 'p')
+	{
+		if (Game == G_game) 
+		{
+			Game = G_pause;
+		}else {
+			if (Game == G_pause)
+			{
+				Game = G_game;
+				NextStep();
+			}
+		}
+	}
 }
+
 void Keys(int key, int ax, int ay)
 {
 	switch (key)
@@ -93,16 +164,19 @@ void Keys(int key, int ax, int ay)
 	}	
 }
 
-void NextStep(int t = 0)
+void NextStep(int t)
 {
+	glutPostRedisplay();
 	if (Game != G_game)
 		return;
-	glutPostRedisplay();
 	glutTimerFunc(100, NextStep, 0);
 	for (size_t i = 0; i < Spooks.size(); i++)
 		Spooks[i].Step();
 	packman.Step();
 	CollisionDetection();
+
+	if (WinGame())
+		Game = G_win;
 }
 
 int main(int argc ,char** argv)
@@ -156,14 +230,15 @@ void Open()
 void NewGame()
 {
 	Open();
-	for (size_t i = 0; i < Matrix.size(); i++)
+/*	for (size_t i = 0; i < Matrix.size(); i++)
 	{
 		for (size_t j = 0; j < Matrix[i].size(); j++)
 		{
 			if (Matrix[i][j] == C_track)
 				Matrix[i][j] = C_food;
 		}
-	}
+	}*/
+
 	for (size_t i = 0; i < Spooks.size(); i++)
 	{
 		Spooks[i].x = 29;
