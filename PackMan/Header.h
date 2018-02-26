@@ -4,6 +4,7 @@
 #include <GL\freeglut.h>
 #include <fstream>
 #include <ctime>
+#include <string>
 
 enum Cubes
 {
@@ -41,7 +42,7 @@ public:
 	~Man() {}
 	int x = 3, y = 5;
 	
-	void Step()
+	int Step()
 	{
 		switch (nextdir)
 		{
@@ -100,6 +101,7 @@ public:
 		default:
 			break;
 		}
+		return 0;
 	}
 	void Draw(float w,float h,float wndh)
 	{
@@ -119,11 +121,13 @@ public:
 	{
 		return abs(x - m.x) < 4 && abs(y - m.y)<4;
 	}
+	static int undyingTimer;
 protected:
 	std::vector<std::vector<Cubes>>* Matrix;
 	M_direct nextdir = d_left;
 	M_direct direct = d_right;
 };
+int Man::undyingTimer = 0;
 
 class Spook:public Man
 {
@@ -144,7 +148,7 @@ public:
 		glVertex2f(w*x + w * 4, wndh - h - h*y + h * 4);
 		glEnd();
 	}
-	void Step()
+	int Step()
 	{
 		std::vector<M_direct>arr;
 
@@ -168,6 +172,7 @@ public:
 			nextdir = arr[rand() % (arr.size())];
 
 		Man::Step();
+		return 0;
 	}
 	
 private:
@@ -193,7 +198,7 @@ public:
 		glEnd();
 	}
 
-	void Step()
+	int Step()
 	{
 		Man::Step();
 		if ((*Matrix)[y][x] == C_drug) 
@@ -201,9 +206,17 @@ public:
 		
 		if (undyingTimer > 0)
 			undyingTimer--;
+		int res = 0;
+		if ((*Matrix)[y][x] == C_food)
+			res = 10;
+
+		if ((*Matrix)[y][x] == C_drug)
+			res = 50;
 
 		(*Matrix)[y][x] = C_track;
+
+		return res;
+
 	}
-	int undyingTimer = 0;
 private:
 };

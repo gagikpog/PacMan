@@ -7,13 +7,15 @@ vector<vector<Cubes>> Matrix;
 vector<Spook> Spooks(4, &Matrix);
 Pac packman(&Matrix);
 Game_stat Game = G_game;
+int score = 0;
 
 void Init();
 void Open();
 void NewGame();
-void NextStep(int t = 0);
+void NextStepPac(int t = 0);
+void NextStepSpook(int t = 0);
 
-void Sprint(int x, int y, char *st)
+void Sprint(int x, int y,const char *st)
 {
 	int l, i;
 	l = strlen(st);
@@ -34,6 +36,7 @@ void CollisionDetection()
 			}else {
 				Spooks[i].x = 29;
 				Spooks[i].y = 25;
+				score += 200;
 			}
 		}
 	}
@@ -93,7 +96,7 @@ void Draw(float x,float  y,float w,float h, Cubes b)
 
 void Display()
 {
-	glClearColor(1, 1, 1, 1);
+	glClearColor(0, 0, 0, 0);
 	glClear(GL_COLOR_BUFFER_BIT);
 	
 	if (Matrix.size()) {
@@ -127,7 +130,8 @@ void Display()
 		Sprint(WndW / 2 - 25, WndH / 2 - 5, "over");
 		break;
 	}
-	
+	string str = "Score  " + to_string(score);
+	Sprint(10, -15, str.c_str());
 
 	glutSwapBuffers();
 }
@@ -147,7 +151,8 @@ void Keys(unsigned char key, int ax, int ay)
 			if (Game == G_pause)
 			{
 				Game = G_game;
-				NextStep();
+				NextStepPac();
+				NextStepSpook();
 			}
 		}
 	}
@@ -164,17 +169,34 @@ void Keys(int key, int ax, int ay)
 	}	
 }
 
-void NextStep(int t)
+void NextStepPac(int t)
 {
 	glutPostRedisplay();
 	if (Game != G_game)
 		return;
-	glutTimerFunc(100, NextStep, 0);
-	for (size_t i = 0; i < Spooks.size(); i++)
-		Spooks[i].Step();
-	packman.Step();
+	int speed = 70;
+	if (Man::undyingTimer > 0)
+		speed = 60;
+	glutTimerFunc(speed, NextStepPac, 0);
+	score += packman.Step();
 	CollisionDetection();
 
+	if (WinGame())
+		Game = G_win;
+}
+
+void NextStepSpook(int t)
+{
+	glutPostRedisplay();
+	if (Game != G_game)
+		return;
+	int speed = 70;
+	if (Man::undyingTimer > 0)
+		speed = 80;
+	glutTimerFunc(speed, NextStepSpook, 0);
+	for (size_t i = 0; i < Spooks.size(); i++)
+		Spooks[i].Step();
+	CollisionDetection();
 	if (WinGame())
 		Game = G_win;
 }
@@ -184,11 +206,11 @@ int main(int argc ,char** argv)
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
 	glutInitWindowPosition(100, 100);
-	glutInitWindowSize(WndH, WndW);
+	glutInitWindowSize(WndW, WndH + 20);
 
 	glutCreateWindow("PackMan");
 
-	gluOrtho2D(0, WndW, 0, WndH);
+	gluOrtho2D(0, WndW, -20, WndH);
 	glMatrixMode(GL_MODELVIEW);
 
 	Init();
@@ -229,15 +251,8 @@ void Open()
 
 void NewGame()
 {
+	score = 0;
 	Open();
-/*	for (size_t i = 0; i < Matrix.size(); i++)
-	{
-		for (size_t j = 0; j < Matrix[i].size(); j++)
-		{
-			if (Matrix[i][j] == C_track)
-				Matrix[i][j] = C_food;
-		}
-	}*/
 
 	for (size_t i = 0; i < Spooks.size(); i++)
 	{
@@ -249,5 +264,6 @@ void NewGame()
 	packman.y = 5;
 	packman.undyingTimer = 0;
 	Game = G_game;
-	NextStep();
+	NextStepPac();
+	NextStepSpook();
 }
