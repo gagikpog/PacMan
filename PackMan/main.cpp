@@ -2,18 +2,21 @@
 
 using namespace std;
 
-float WndW = 400.f, WndH = 400.f;
+float WndW = 600.f, WndH = 600.f;
 vector<vector<Cubes>> Matrix;
 vector<Spook> Spooks(4, &Matrix);
 Pac packman(&Matrix);
 Game_stat Game = G_game;
 int score = 0;
 
+GLuint mark_textures;
+
 void Init();
 void Open();
 void NewGame();
 void NextStepPac(int t = 0);
 void NextStepSpook(int t = 0);
+GLuint LoadBMP(const char *fileName);
 
 void Sprint(int x, int y,const char *st)
 {
@@ -22,6 +25,24 @@ void Sprint(int x, int y,const char *st)
 	glRasterPos2i(x, y); 
 	for (i = 0; i < l; i++) 
 		glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, st[i]);
+}
+
+void DrawImage(void) {
+	glDisable(GL_LIGHTING);
+	
+	glColor3f(0, 0, 1);
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, mark_textures);
+
+	// Draw a textured quad
+	glBegin(GL_QUADS);
+	glTexCoord2f(0, 0); glVertex3f(0, 0, 0);
+	glTexCoord2f(0, 1); glVertex3f(0, WndH, 0);
+	glTexCoord2f(1, 1); glVertex3f(WndW, WndH, 0);
+	glTexCoord2f(1, 0); glVertex3f(WndW, 0, 0);
+	glEnd();
+
+	glDisable(GL_TEXTURE_2D);
 }
 
 void CollisionDetection()
@@ -67,17 +88,18 @@ void Draw(float x,float  y,float w,float h, Cubes b)
 	glBegin(GL_QUADS);
 	switch (b)
 	{
-	case C_wall:glColor3ub(0, 10,20);
+	case C_wall:break; glColor3ub(0, 10, 20);
 		break;
-	case C_void:glColor3ub(0, 180, 200);
+	case C_void:break; glColor3ub(0, 180, 200);
 		break;
-	case C_food:glColor3ub(255, 255, 255);
-		glVertex2f(x + w  , y + h);
-		glVertex2f(x + w*2, y + h);
-		glVertex2f(x + w*2, y + h*2);
-		glVertex2f(x + w  , y + h*2);
+	case C_food:
+		glColor3ub(255, 255, 255);
+		glVertex2f(x + w*1.5f  , y + h*1.5f);
+		glVertex2f(x + w*2.f, y + h*1.5f);
+		glVertex2f(x + w*2.f, y + h*2.f);
+		glVertex2f(x + w*1.5f  , y + h*2.f);
 	//	break;
-	case C_track:glColor3ub(0, 150,200);
+	case C_track:break; glColor3ub(0, 150,200);
 		break;
 	case C_drug:glColor3ub(255, 255, 0);
 		glVertex2f(x + w, y + h);
@@ -87,6 +109,7 @@ void Draw(float x,float  y,float w,float h, Cubes b)
 		glColor3ub(0, 150, 200);
 		break;
 	}
+	return;
 	glVertex2f(x, y);
 	glVertex2f(x+w, y);
 	glVertex2f(x+w, y+h);
@@ -99,6 +122,8 @@ void Display()
 	glClearColor(0, 0, 0, 0);
 	glClear(GL_COLOR_BUFFER_BIT);
 	
+	DrawImage();
+
 	if (Matrix.size()) {
 		float w = WndW / Matrix[0].size();
 		float h = WndH / (Matrix.size());
@@ -113,6 +138,8 @@ void Display()
 			Spooks[i].Draw(w,h,WndH);
 		packman.Draw(w, h,WndH);
 	}
+
+
 
 	glColor3f(1, 1, 1);
 	switch (Game)
@@ -214,12 +241,72 @@ int main(int argc ,char** argv)
 	glMatrixMode(GL_MODELVIEW);
 
 	Init();
+	mark_textures = LoadBMP("background.bmp");
 
 	glutSpecialFunc(Keys);
 	glutKeyboardFunc(Keys);
 	glutDisplayFunc(Display);
 	glutMainLoop();
 	return 0;
+}
+
+GLuint LoadBMP(const char *fileName)
+{
+	FILE *file;
+	unsigned char header[54];
+	unsigned int dataPos;
+	unsigned int size;
+	unsigned int width, height;
+	unsigned char *data;
+
+	file = fopen(fileName, "rb");
+
+	if (file == NULL)
+	{
+		MessageBox(NULL, L"Error: Invaild file path!", L"Error", MB_OK);
+		return false;
+	}
+
+	if (fread(header, 1, 54, file) != 54)
+	{
+		MessageBox(NULL, L"Error: Invaild file!", L"Error", MB_OK);
+		return false;
+	}
+
+	if (header[0] != 'B' || header[1] != 'M')
+	{
+		MessageBox(NULL, L"Error: Invaild file!", L"Error", MB_OK);
+		return false;
+	}
+
+	dataPos = *(int*)&(header[0x0A]);
+	size = *(int*)&(header[0x22]);
+	width = *(int*)&(header[0x12]);
+	height = *(int*)&(header[0x16]);
+
+	if (size == NULL)
+		size = width * height * 3;
+	if (dataPos == NULL)
+		dataPos = 54;
+
+	data = new unsigned char[size];
+
+	fread(data, 1, size, file);
+
+	fclose(file);
+
+	GLuint texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	glEnable(GL_TEXTURE_2D);
+
+	return texture;
 }
 
 void Init()

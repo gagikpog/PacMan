@@ -127,6 +127,7 @@ protected:
 	M_direct nextdir = d_left;
 	M_direct direct = d_right;
 };
+
 int Man::undyingTimer = 0;
 
 class Spook:public Man
