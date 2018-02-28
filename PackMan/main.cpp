@@ -109,12 +109,13 @@ void Draw(float x,float  y,float w,float h, Cubes b)
 		glColor3ub(0, 150, 200);
 		break;
 	}
+	glEnd();
 	return;
 	glVertex2f(x, y);
 	glVertex2f(x+w, y);
 	glVertex2f(x+w, y+h);
 	glVertex2f(x, y+h);
-	glEnd();
+
 }
 
 void Display()
@@ -219,7 +220,7 @@ void NextStepSpook(int t)
 		return;
 	int speed = 70;
 	if (Man::undyingTimer > 0)
-		speed = 80;
+		speed = 100;
 	glutTimerFunc(speed, NextStepSpook, 0);
 	for (size_t i = 0; i < Spooks.size(); i++)
 		Spooks[i].Step();
@@ -235,7 +236,7 @@ int main(int argc ,char** argv)
 	glutInitWindowPosition(100, 100);
 	glutInitWindowSize(WndW, WndH + 20);
 
-	glutCreateWindow("PackMan");
+	glutCreateWindow("PacMan");
 
 	gluOrtho2D(0, WndW, -20, WndH);
 	glMatrixMode(GL_MODELVIEW);
