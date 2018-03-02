@@ -1,9 +1,11 @@
 .vs/
 PackMan.VC.db
-PackMan/Debug/
-Debug/PackMan.exe.metagen
-Debug/PackMan.pdb
-Release/
 PackMan.xlsx
 PackMan.jpg
 PackMan.VC.VC.opendb
+PackMan/Debug/
+PackMan/Release/
+bin/PackMan_D.exe.metagen
+bin/PackMan_D.pdb
+bin/PackMan_R.exe.metagen
+bin/PackMan_R.pdb

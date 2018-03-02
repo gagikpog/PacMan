@@ -8,12 +8,12 @@ public:
 	ConfigINI(std::string filename);
 	~ConfigINI();
 	void clear();
-	std::string getOptionToString(std::string key);
-	int getOptionToInt(std::string key);
-	void addNewOption(std::string key, std::string value);
-	void addNewOption(std::string key, int value);
-	void updateOption(std::string key, std::string value);
-	void updateOption(std::string key, int value);
+	std::string getOptionToString(std::string section,std::string key);
+	int getOptionToInt(std::string section, std::string key);
+	bool addNewOption(std::string section, std::string key, std::string value);
+	bool addNewOption(std::string section, std::string key, int value);
+	bool updateOption(std::string section, std::string key, std::string value);
+	bool updateOption(std::string section, std::string key, int value);
 private:
 	std::string fname;
 	std::ofstream fout;

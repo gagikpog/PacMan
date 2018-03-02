@@ -13,11 +13,12 @@ int score = 0;
 GLuint mark_textures;
 
 void Init();
-void Open();
+void Open(string fname);
 void NewGame();
 void NextStepPac(int t = 0);
 void NextStepSpook(int t = 0);
-GLuint LoadBMP(const char *fileName);
+GLuint LoadBMP(const char* fileName);
+bool NextLevel(bool drop = false);
 
 void Sprint(int x, int y,const char *st)
 {
@@ -243,7 +244,6 @@ int main(int argc ,char** argv)
 	glMatrixMode(GL_MODELVIEW);
 
 	Init();
-	mark_textures = LoadBMP("background.bmp");
 
 	glutSpecialFunc(Keys);
 	glutKeyboardFunc(Keys);
@@ -252,7 +252,7 @@ int main(int argc ,char** argv)
 	return 0;
 }
 
-GLuint LoadBMP(const char *fileName)
+GLuint LoadBMP(const char* fileName)
 {
 	FILE *file;
 	unsigned char header[54];
@@ -317,9 +317,9 @@ void Init()
 	NewGame();
 }
 
-void Open()
+void Open(string fname)
 {
-	ifstream fin("square.txt");
+	ifstream fin(fname);
 	Matrix.clear();
 	if (fin.is_open())
 	{
@@ -341,7 +341,7 @@ void Open()
 void NewGame()
 {
 	score = 0;
-	Open();
+	NextLevel(true);
 
 	for (size_t i = 0; i < Spooks.size(); i++)
 	{
@@ -355,4 +355,21 @@ void NewGame()
 	Game = G_game;
 	NextStepPac();
 	NextStepSpook();
+}
+
+bool NextLevel(bool drop)
+{
+	static int nlevel = 1;
+	if (drop)
+		nlevel = 1;
+	
+	ConfigINI ini("Levels.ini");
+	string resB = ini.getOptionToString("Level" + to_string(nlevel), "backgr");
+	string resM = ini.getOptionToString("Level" + to_string(nlevel), "map");
+	if (resM == "NAN" || resB == "NAN")
+		return false;
+	mark_textures = LoadBMP(resB.c_str());
+	Open(resM);
+	nlevel++;
+	return true;
 }

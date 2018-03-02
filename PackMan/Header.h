@@ -272,9 +272,9 @@ public:
 	{
 		glBegin(GL_TRIANGLE_FAN);
 
-		if(undyingTimer == 0)
-			glColor3ub(255, 255, 0);
-		else glColor3ub(0, 0, 255);
+	//	if(undyingTimer == 0)
+		glColor3ub(255, 255, 0);
+	//	else glColor3ub(0, 0, 255);
 
 		static bool b = true;
 		if(b)
