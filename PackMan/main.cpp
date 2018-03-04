@@ -1,15 +1,21 @@
 #include "Header.h"
 #include "ConfigINI.h"
+#include "resource.h"
 
 using namespace std;
+
+HDC         hDC = NULL;
+HWND        hWnd = NULL;
 
 float WndW = 600.f, WndH = 600.f;
 vector<vector<Cubes>> Matrix;
 vector<Spook> Spooks(4, &Matrix);
+pair<int, int> spawnP, spawnS;
 Pac packman(&Matrix);
 Game_stat Game = G_game;
-int score = 0;
+int score = 0, lifes = 3;
 
+string ProgramName;
 GLuint mark_textures;
 
 void Init();
@@ -55,21 +61,35 @@ void CollisionDetection()
 		{
 			if (packman.undyingTimer == 0) 
 			{
-				Game = G_over;
+				lifes--;
+				if (lifes <= 0) {
+					Game = G_over;
+				}else {
+					packman.y = spawnP.first;
+					packman.x = spawnP.second;
+					packman.SetDirect(d_right);
+					for (int j = 0; j < Spooks.size(); j++)
+					{
+						Spooks[j].y = spawnS.first;
+						Spooks[j].x = spawnS.second;
+					}
+				}
+				break;
 			}else {
-				Spooks[i].x = 29;
-				Spooks[i].y = 25;
+				Spooks[i].y = spawnS.first;
+				Spooks[i].x = spawnS.second;
 				score += 200;
 			}
 		}
 	}
 }
 
-bool WinGame()
+bool WinGame(bool drop = false)
 {
 	static int i = 0;
+	
 	if (Matrix.empty())
-		return 0;
+		return false;
 	int size = Matrix.size()*Matrix[0].size();
 
 	while (i < size &&( Matrix[i/Matrix[0].size()][i%Matrix[0].size()] != C_drug &&  Matrix[i / Matrix[0].size()][i%Matrix[0].size()] != C_food))
@@ -77,12 +97,12 @@ bool WinGame()
 		i++;
 	}
 
-	if (i == size) 
+	if (i >= size || drop) 
 	{
 		i = 0;
-		return 1;
+		return !drop;
 	}
-	return 0;
+	return false;
 }
 
 void Draw(float x,float  y,float w,float h, Cubes b)
@@ -90,7 +110,13 @@ void Draw(float x,float  y,float w,float h, Cubes b)
 	glBegin(GL_QUADS);
 	switch (b)
 	{
-	case C_wall:break; glColor3ub(0, 10, 20);
+	case C_wall:
+		if (mark_textures > 0)break;
+			glColor3ub(0, 200, 200);
+			glVertex2f(x, y);
+			glVertex2f(x + w, y);
+			glVertex2f(x + w, y + h);
+			glVertex2f(x, y + h);
 		break;
 	case C_void:break; glColor3ub(0, 180, 200);
 		break;
@@ -113,10 +139,6 @@ void Draw(float x,float  y,float w,float h, Cubes b)
 	}
 	glEnd();
 	return;
-	glVertex2f(x, y);
-	glVertex2f(x+w, y);
-	glVertex2f(x+w, y+h);
-	glVertex2f(x, y+h);
 
 }
 
@@ -125,7 +147,8 @@ void Display()
 	glClearColor(0, 0, 0, 0);
 	glClear(GL_COLOR_BUFFER_BIT);
 	
-	DrawImage();
+	if(mark_textures>0)
+		DrawImage();
 
 	if (Matrix.size()) {
 		float w = WndW / Matrix[0].size();
@@ -140,6 +163,10 @@ void Display()
 		for (size_t i = 0; i < Spooks.size(); i++)
 			Spooks[i].Draw(w,h,WndH);
 		packman.Draw(w, h,WndH);
+		for (int i = 1; i <= lifes; i++)
+		{
+			drawPac(Matrix[0].size()-4*i, Matrix.size()+1, w, h, WndH,0.2, d_left);
+		}
 	}
 
 
@@ -211,8 +238,11 @@ void NextStepPac(int t)
 	score += packman.Step();
 	CollisionDetection();
 
-	if (WinGame())
-		Game = G_win;
+	if (WinGame()) 
+	{
+		if(!NextLevel())
+			Game = G_win;
+	}
 }
 
 void NextStepSpook(int t)
@@ -228,17 +258,24 @@ void NextStepSpook(int t)
 		Spooks[i].Step();
 	CollisionDetection();
 	if (WinGame())
-		Game = G_win;
+	{
+		if (!NextLevel())
+			Game = G_win;
+	}
 }
 
 int main(int argc ,char** argv)
 {
+	string str = argv[0];
+	ProgramName = str.substr(str.find_last_of('\\')+1);
+	ProgramName = ProgramName.substr(0, ProgramName.find_last_of('.'));
+
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
 	glutInitWindowPosition(100, 100);
 	glutInitWindowSize(WndW, WndH + 20);
 
-	glutCreateWindow("PacMan");
+	glutCreateWindow(ProgramName.c_str());
 
 	gluOrtho2D(0, WndW, -20, WndH);
 	glMatrixMode(GL_MODELVIEW);
@@ -314,6 +351,12 @@ GLuint LoadBMP(const char* fileName)
 void Init()
 {
 	srand(time(NULL));
+
+	hWnd = FindWindowA(0, ProgramName.c_str());
+	hDC = GetDC(hWnd);
+	
+	HANDLE icon = LoadImage(GetModuleHandle(L"PacMan.exe"), MAKEINTRESOURCE(IDI_ICON1), IMAGE_ICON, 32, 32, LR_COLOR);
+	SendMessage(hWnd, (UINT)WM_SETICON, ICON_BIG, (LPARAM)icon);
 	NewGame();
 }
 
@@ -341,16 +384,10 @@ void Open(string fname)
 void NewGame()
 {
 	score = 0;
+	lifes = 3;
 	NextLevel(true);
+	WinGame(true);
 
-	for (size_t i = 0; i < Spooks.size(); i++)
-	{
-		Spooks[i].x = 29;
-		Spooks[i].y = 25;
-	}
-	
-	packman.x = 3;
-	packman.y = 5;
 	packman.undyingTimer = 0;
 	Game = G_game;
 	NextStepPac();
@@ -370,6 +407,33 @@ bool NextLevel(bool drop)
 		return false;
 	mark_textures = LoadBMP(resB.c_str());
 	Open(resM);
+	bool b1 = true,b2 = true;
+	for (int i = 0; i < Matrix.size() && (b1 || b2) ; i++)
+	{
+		for (int j = 0; j < Matrix[i].size() && (b1 || b2) < 2; j++)
+		{
+			if (Matrix[i][j] == C_spawnS)
+			{
+				spawnS = make_pair(i, j);
+				b1 = false;
+			}
+			if (Matrix[i][j] == C_spawnP)
+			{
+				spawnP = make_pair(i, j);
+				b2 = false;
+			}
+		}
+	}
+
+	for (size_t i = 0; i < Spooks.size(); i++)
+	{
+		Spooks[i].y = spawnS.first;
+		Spooks[i].x = spawnS.second;
+	}
+
+	packman.y = spawnP.first;
+	packman.x = spawnP.second;
+
 	nlevel++;
 	return true;
 }

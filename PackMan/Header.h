@@ -5,11 +5,14 @@
 #include <fstream>
 #include <ctime>
 #include <string>
+#include <algorithm>
+#include <utility>
+
 const float PI = 3.14159265358979323846f;
 
 enum Cubes
 {
-	C_void,C_wall,C_track,C_drug,C_food
+	C_void,C_wall,C_track,C_drug,C_food,C_spawnS,C_spawnP
 };
 
 enum M_direct
@@ -33,6 +36,48 @@ M_direct& operator!(M_direct& f)
 	}
 }
 
+bool Compare(const Cubes &a,bool is_pac)
+{
+	bool res = true;
+
+	if (a == C_void || a == C_wall)
+		res = false;
+	if(is_pac && a == C_spawnS)
+		res = false;
+	return res;
+}
+
+void drawPac(int x,int y,float w, float h, float wndh,float angle, M_direct direct) {
+
+	glBegin(GL_TRIANGLE_FAN);
+	glColor3ub(255, 255, 0);
+
+	float begin = angle, end = 2 * PI - angle;
+	
+	glVertex2f(w*(x + 2), wndh - h*(y - 1));
+
+	switch (direct)
+	{
+	case d_up:
+		begin += PI / 2;
+		end += PI / 2;
+		break;
+	case d_left:
+		begin += PI;
+		end += PI;
+		break;
+	case d_down:
+		begin += 3 * PI / 2;
+		end += 3 * PI / 2;
+		break;
+	}
+	float r = 1.4 * w;
+	for (float i = begin; i < end; i += 0.1f)
+		glVertex2f(w*(x + 2) + cosf(i)*r, wndh - h*(y - 1) + sinf(i)*r);
+
+	glEnd();
+}
+
 class Man
 {
 public:
@@ -42,78 +87,9 @@ public:
 	}
 	~Man() {}
 	int x = 3, y = 5;
+	static int undyingTimer;
 	
-	int Step()
-	{
-		switch (nextdir)
-		{
-		case d_right:
-			if ((x == (*Matrix)[0].size() - 1) && ((*Matrix)[y][0] == C_track || (*Matrix)[y][0] == C_food))
-				x = 0;
-			if (x < (*Matrix)[0].size()-1)
-				if (((*Matrix)[y][x + 1]) == C_track || (*Matrix)[y][x + 1] == C_food || (*Matrix)[y][x + 1] == C_drug)
-					direct = nextdir;
-			break;
-		case d_up:
-			if ((y == 0) && ((*Matrix)[(*Matrix).size() - 1][x] == C_track || (*Matrix)[(*Matrix).size() - 1][x] == C_food))
-				y = (*Matrix).size() - 1;
-			if (y>0)
-				if (((*Matrix)[y - 1][x]) == C_track || (*Matrix)[y - 1][x] == C_food || (*Matrix)[y - 1][x] == C_drug)
-					direct = nextdir;
-			break;
-		case d_left:
-			if (x == 0 && ((*Matrix)[y][(*Matrix)[0].size() - 1] == C_track || (*Matrix)[y][(*Matrix)[0].size() - 1] == C_food))
-				x = (*Matrix)[0].size() - 1;
-			if (x>0)
-				if (((*Matrix)[y][x - 1]) == C_track || (*Matrix)[y][x - 1] == C_food || (*Matrix)[y][x - 1] == C_drug)
-					direct = nextdir;
-			break;
-		case d_down:
-			if ((y == (*Matrix).size() - 1) && ((*Matrix)[0][x] == C_track || (*Matrix)[0][x] == C_food))
-				y = 0;
-			if (y<(*Matrix).size()-1)
-				if (((*Matrix)[y + 1][x]) == C_track || (*Matrix)[y + 1][x] == C_food || (*Matrix)[y + 1][x] == C_drug)
-					direct = nextdir;
-			break;
-		}
-
-		switch (direct)
-		{
-		case d_right: 
-			if(x<(*Matrix)[0].size()-1)
-			if (((*Matrix)[y][x + 1]) == C_track || ((*Matrix)[y][x + 1]) == C_food || ((*Matrix)[y][x + 1]) == C_drug)
-				x++;
-			break;
-		case d_up:
-			if (y>0)
-			if (((*Matrix)[y - 1][x]) == C_track || ((*Matrix)[y - 1][x]) == C_food || ((*Matrix)[y - 1][x]) == C_drug)
-				y--;
-			break;
-		case d_left:
-			if (x>0)
-			if (((*Matrix)[y][x - 1]) == C_track || ((*Matrix)[y][x - 1]) == C_food || ((*Matrix)[y][x - 1]) == C_drug)
-				x--;
-			break;
-		case d_down:
-			if (y<(*Matrix).size()-1)
-			if (((*Matrix)[y + 1][x]) == C_track || ((*Matrix)[y + 1][x]) == C_food || ((*Matrix)[y + 1][x]) == C_drug)
-				y++;
-			break;
-		default:
-			break;
-		}
-		return 0;
-	}
-	void Draw(float w,float h,float wndh)
-	{
-		glBegin(GL_TRIANGLE_STRIP);
-		glColor3ub(0, 100, 0);
-		glVertex2f(w*x,wndh- h*y-h);
-		glVertex2f(w*x+w*4, wndh -h- h*y);
-		glVertex2f(w*x, wndh -h- h*y+h*4);
-		glVertex2f(w*x+w*4, wndh -h- h*y+h*4);
-		glEnd();
-	}
+	virtual void Draw(float w, float h, float wndh) = 0;
 	void SetDirect(M_direct d)
 	{
 		nextdir = d;
@@ -122,11 +98,69 @@ public:
 	{
 		return abs(x - m.x) < 3 && abs(y - m.y)<3;
 	}
-	static int undyingTimer;
 protected:
 	std::vector<std::vector<Cubes>>* Matrix;
 	M_direct nextdir = d_left;
-	M_direct direct = d_right;
+	M_direct direct = d_right;	
+	int Step(bool is_pac)
+	{
+		switch (nextdir)
+		{
+		case d_right:
+			if ((x == (*Matrix)[0].size() - 1) && Compare((*Matrix)[y][0] , is_pac))
+				x = 0;
+			if (x < (*Matrix)[0].size()-1)
+				if (Compare((*Matrix)[y][x + 1],is_pac))
+					direct = nextdir;
+			break;
+		case d_up:
+			if ((y == 0) && Compare((*Matrix)[(*Matrix).size() - 1][x] ,is_pac))
+				y = (*Matrix).size() - 1;
+			if (y>0)
+				if (Compare((*Matrix)[y - 1][x],is_pac))
+					direct = nextdir;
+			break;
+		case d_left:
+			if (x == 0 && Compare((*Matrix)[y][(*Matrix)[0].size() - 1] ,is_pac))
+				x = (*Matrix)[0].size() - 1;
+			if (x>0)
+				if (Compare((*Matrix)[y][x - 1],is_pac))
+					direct = nextdir;
+			break;
+		case d_down:
+			if ((y == (*Matrix).size() - 1) && Compare((*Matrix)[0][x] ,is_pac))
+				y = 0;
+			if (y<(*Matrix).size()-1)
+				if (Compare((*Matrix)[y + 1][x],is_pac))
+					direct = nextdir;
+			break;
+		}
+
+		switch (direct)
+		{
+		case d_right: 
+			if(x<(*Matrix)[0].size()-1)
+			if (Compare((*Matrix)[y][x + 1],is_pac))
+				x++;
+			break;
+		case d_up:
+			if (y>0)
+			if (Compare((*Matrix)[y - 1][x],is_pac))
+				y--;
+			break;
+		case d_left:
+			if (x>0)
+			if (Compare((*Matrix)[y][x - 1],is_pac))
+				x--;
+			break;
+		case d_down:
+			if (y<(*Matrix).size()-1)
+			if (Compare((*Matrix)[y + 1][x],is_pac))
+				y++;
+			break;
+		}
+		return 0;
+	}
 };
 
 int Man::undyingTimer = 0;
@@ -234,18 +268,18 @@ public:
 	{
 		std::vector<M_direct>arr;
 
-		if (((*Matrix)[y + 1][x] == C_track || ((*Matrix)[y + 1][x]) == C_food || ((*Matrix)[y + 1][x]) == C_drug) && direct != d_up)
+		if (Compare((*Matrix)[y + 1][x] ,false) && direct != d_up)
 			arr.push_back(d_down);
 
-		if (((*Matrix)[y - 1][x] == C_track || ((*Matrix)[y - 1][x]) == C_food || ((*Matrix)[y - 1][x]) == C_drug) && direct != d_down)
+		if (Compare((*Matrix)[y - 1][x] ,false) && direct != d_down)
 			arr.push_back(d_up);
 
 		if (x < (*Matrix)[0].size() - 1)
-			if (((*Matrix)[y][x + 1] == C_track || ((*Matrix)[y][x + 1]) == C_food || ((*Matrix)[y][x + 1]) == C_drug)&& direct != d_left)
+			if (Compare((*Matrix)[y][x + 1] ,false)&& direct != d_left)
 				arr.push_back(d_right);
 
 		if (x > 0)
-			if (((*Matrix)[y][x - 1] == C_track || ((*Matrix)[y][x - 1]) == C_food || ((*Matrix)[y][x - 1]) == C_drug) && direct != d_right)
+			if (Compare((*Matrix)[y][x - 1] ,false) && direct != d_right)
 				arr.push_back(d_left);
 
 		if (arr.empty())
@@ -253,7 +287,7 @@ public:
 		else 
 			nextdir = arr[rand() % (arr.size())];
 
-		Man::Step();
+		Man::Step(false);
 		return 0;
 	}
 	
@@ -270,52 +304,21 @@ public:
 	
 	void Draw(float w, float h, float wndh)
 	{
-		glBegin(GL_TRIANGLE_FAN);
-
-	//	if(undyingTimer == 0)
-		glColor3ub(255, 255, 0);
-	//	else glColor3ub(0, 0, 255);
-
 		static bool b = true;
-		if(b)
-			angle += 0.3;
-		else angle -= 0.3;
+		
+		if(b) angle += 0.3;
+		else  angle -= 0.3;
 		if (angle >= 1.1&&b)
 			b = !b;
 		else if (angle <= 0 && !b)
-			b = !b;
-
-		float begin = angle, end = 2*PI-angle;
-
-
-		glVertex2f(w*(x + 2), wndh - h*(y - 1));
-
-		switch (direct)
-		{
-		case d_up:
-			begin += PI / 2;
-			end += PI / 2;
-			break;
-		case d_left:
-			begin += PI;
-			end += PI;
-			break;
-		case d_down:
-			begin += 3*PI / 2;
-			end += 3*PI / 2;
-			break;
-		}
-		float r = 1.5 * w;
-		for (float i = begin; i < end; i+=0.1f)
-			glVertex2f(w*(x + 2)+cosf(i)*r, wndh - h*(y - 1) + sinf(i)*r);
-
-		glEnd();
+				b = !b;
+		drawPac(x, y, w, h, wndh, angle, direct);
 	}
 
 	int Step()
 	{
-		int timeout = 70;
-		Man::Step();
+		int timeout = 100;
+		Man::Step(true);
 		if ((*Matrix)[y][x] == C_drug) 
 			undyingTimer = timeout;
 		
