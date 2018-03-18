@@ -12,7 +12,6 @@ ConfigINI::~ConfigINI()
 void ConfigINI::clear()
 {
 	fout.open(fname);
-	fout << "[INI]";
 	fout.close();
 }
 
@@ -22,7 +21,8 @@ std::string ConfigINI::getOptionToString(std::string section, std::string key)
 	if (fin.is_open())
 	{
 		std::string res,sect;
-		int p,com;
+		int com;
+		bool p;
 		while (!fin.eof())
 		{
 			std::getline(fin,res);
@@ -35,12 +35,13 @@ std::string ConfigINI::getOptionToString(std::string section, std::string key)
 				sect = res;
 				continue;
 			}
-			p = res.find(key);
-			if (p == 0 && sect == "[" + section + "]")
+			 
+			p = key == res.substr(0, res.find("="));
+			if ( p && sect == "[" + section + "]")
 				break;
 		}
 		fin.close();
-		if (p == 0)
+		if (p)
 		{
 			return res.substr(key.size() + 1);
 		}
@@ -79,7 +80,7 @@ bool ConfigINI::addNewOption(std::string section, std::string key, std::string v
 				if (sect == "[" + section + "]")
 				{
 					b = true;
-					output += key + " " + value + "\n";
+					output += key + "=" + value + "\n";
 				}
 				continue;
 			}
@@ -87,7 +88,7 @@ bool ConfigINI::addNewOption(std::string section, std::string key, std::string v
 		}
 		if (!b)
 		{
-			output += "[" + section + "]\n" + key + " " + value + "\n";
+			output += "[" + section + "]\n" + key + "=" + value + "\n";
 			b = true;
 		}
 		fin.close();
@@ -136,8 +137,8 @@ bool ConfigINI::updateOption(std::string section, std::string key, std::string v
 				b = true;
 				int com = res.find_first_of(";#");
 				if (com > 0)
-					res = key + " " + value + res.substr(com);
-				else res = key + " " + value;
+					res = key + "=" + value + res.substr(com);
+				else res = key + "=" + value;
 			}
 			output += res + "\n";
 		}
