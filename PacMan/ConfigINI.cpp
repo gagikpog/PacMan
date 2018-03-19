@@ -1,6 +1,6 @@
 #include "ConfigINI.h"
 
-ConfigINI::ConfigINI(std::string filename)
+ConfigINI::ConfigINI(const std::string& filename)
 {
 	fname = filename;
 }
@@ -15,7 +15,7 @@ void ConfigINI::clear()
 	fout.close();
 }
 
-std::string ConfigINI::getOptionToString(std::string section, std::string key)
+std::string ConfigINI::getOptionToString(const std::string& section,const std::string& key)
 {
 	fin.open(fname);
 	if (fin.is_open())
@@ -51,13 +51,13 @@ std::string ConfigINI::getOptionToString(std::string section, std::string key)
 	return "NAN";
 }
 
-int ConfigINI::getOptionToInt(std::string section, std::string key)
+int ConfigINI::getOptionToInt(const std::string& section,const std::string& key)
 {
 	std::string res = getOptionToString(section,key);
 	return std::atoi(res.c_str());
 }
 
-bool ConfigINI::addNewOption(std::string section, std::string key, std::string value)
+bool ConfigINI::addNewOption(const std::string& section,const std::string& key,const std::string& value)
 {
 	bool b = false;
 	std::string res = getOptionToString(section,key);
@@ -68,7 +68,6 @@ bool ConfigINI::addNewOption(std::string section, std::string key, std::string v
 	if (fin.is_open()) 
 	{
 		std::string res, sect,output;
-		int p;
 		while (!fin.eof())
 		{
 			std::getline(fin, res);
@@ -102,12 +101,12 @@ bool ConfigINI::addNewOption(std::string section, std::string key, std::string v
 	return b;
 }
 
-bool ConfigINI::addNewOption(std::string section, std::string key, int value)
+bool ConfigINI::addNewOption(const std::string& section,const std::string& key,const int& value)
 {
 	return this->addNewOption(section,key, std::to_string(value));
 }
 
-bool ConfigINI::updateOption(std::string section, std::string key, std::string value)
+bool ConfigINI::updateOption(const std::string& section,const std::string& key,const std::string& value)
 {
 	std::string output;
 	fin.open(fname);
@@ -153,7 +152,7 @@ bool ConfigINI::updateOption(std::string section, std::string key, std::string v
 	return b;
 }
 
-bool ConfigINI::updateOption(std::string section, std::string key, int value)
+bool ConfigINI::updateOption(const std::string& section,const std::string& key,const int& value)
 {
 	return this->updateOption(section,key, std::to_string(value));
 }

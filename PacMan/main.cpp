@@ -1,4 +1,4 @@
-#include "Header.h"
+#include "Game.h"
 #include "ConfigINI.h"
 #include "resource.h"
 
@@ -25,15 +25,6 @@ void NextStepPac(int t = 0);
 void NextStepSpook(int t = 0);
 GLuint LoadBMP(const char* fileName);
 bool NextLevel(bool drop = false);
-
-void Sprint(int x, int y,const char *st)
-{
-	int l, i;
-	l = strlen(st);
-	glRasterPos2i(x, y); 
-	for (i = 0; i < l; i++) 
-		glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, st[i]);
-}
 
 void DrawImage(void) {
 	glDisable(GL_LIGHTING);
@@ -68,7 +59,7 @@ void CollisionDetection()
 					packman.y = spawnP.first;
 					packman.x = spawnP.second;
 					packman.SetDirect(d_right);
-					for (int j = 0; j < Spooks.size(); j++)
+					for (size_t j = 0; j < Spooks.size(); j++)
 					{
 						Spooks[j].y = spawnS.first;
 						Spooks[j].x = spawnS.second;
@@ -165,7 +156,7 @@ void Display()
 		packman.Draw(w, h,WndH);
 		for (int i = 1; i <= lifes; i++)
 		{
-			drawPac(Matrix[0].size()-4*i, Matrix.size()+1, w, h, WndH,0.2, d_left);
+			drawPac(Matrix[0].size()-4*i, Matrix.size()+1, w, h, WndH,0.2f, d_left);
 		}
 	}
 
@@ -177,18 +168,18 @@ void Display()
 	case G_game:
 		break;
 	case G_pause:
-		Sprint(WndW / 2 - 30, WndH / 2 + 5, "Pause");
+		TextPrint(WndW / 2 - 30, WndH / 2 + 5, "Pause");
 		break;
 	case G_win:
-		Sprint(WndW / 2 - 20, WndH / 2 + 5, "Win");
+		TextPrint(WndW / 2 - 20, WndH / 2 + 5, "Win");
 		break;
 	case G_over:
-		Sprint(WndW / 2 - 30, WndH / 2 + 15, "Game");
-		Sprint(WndW / 2 - 25, WndH / 2 - 5, "over");
+		TextPrint(WndW / 2 - 30, WndH / 2 + 15, "Game");
+		TextPrint(WndW / 2 - 25, WndH / 2 - 5, "over");
 		break;
 	}
 	string str = "Score  " + to_string(score);
-	Sprint(10, -15, str.c_str());
+	TextPrint(10, -15, str.c_str());
 
 	glutSwapBuffers();
 }
@@ -273,7 +264,7 @@ int main(int argc ,char** argv)
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
 	glutInitWindowPosition(100, 100);
-	glutInitWindowSize(WndW, WndH + 20);
+	glutInitWindowSize((int)WndW, (int)WndH + 20);
 
 	glutCreateWindow(ProgramName.c_str());
 
@@ -289,68 +280,9 @@ int main(int argc ,char** argv)
 	return 0;
 }
 
-GLuint LoadBMP(const char* fileName)
-{
-	FILE *file;
-	unsigned char header[54];
-	unsigned int dataPos;
-	unsigned int size;
-	unsigned int width, height;
-	unsigned char *data;
-
-	file = fopen(fileName, "rb");
-
-	if (file == NULL)
-	{
-		MessageBox(NULL, L"Error: Invaild file path!", L"Error", MB_OK);
-		return false;
-	}
-
-	if (fread(header, 1, 54, file) != 54)
-	{
-		MessageBox(NULL, L"Error: Invaild file!", L"Error", MB_OK);
-		return false;
-	}
-
-	if (header[0] != 'B' || header[1] != 'M')
-	{
-		MessageBox(NULL, L"Error: Invaild file!", L"Error", MB_OK);
-		return false;
-	}
-
-	dataPos = *(int*)&(header[0x0A]);
-	size = *(int*)&(header[0x22]);
-	width = *(int*)&(header[0x12]);
-	height = *(int*)&(header[0x16]);
-
-	if (size == NULL)
-		size = width * height * 3;
-	if (dataPos == NULL)
-		dataPos = 54;
-
-	data = new unsigned char[size];
-
-	fread(data, 1, size, file);
-
-	fclose(file);
-
-	GLuint texture;
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-	glEnable(GL_TEXTURE_2D);
-
-	return texture;
-}
-
 void Init()
 {
-	srand(time(NULL));
+	srand((size_t)time(NULL));
 
 	hWnd = FindWindowA(0, ProgramName.c_str());
 	hDC = GetDC(hWnd);
@@ -367,7 +299,7 @@ void Open(string fname)
 	if (fin.is_open())
 	{
 		char t;
-		int m, n;
+		size_t m, n;
 		fin >> m >> n;
 		for (size_t i = 0; i < m; i++)
 		{
@@ -408,9 +340,9 @@ bool NextLevel(bool drop)
 	mark_textures = LoadBMP(resB.c_str());
 	Open(resM);
 	bool b1 = true,b2 = true;
-	for (int i = 0; i < Matrix.size() && (b1 || b2) ; i++)
+	for (size_t i = 0; i < Matrix.size() && (b1 || b2) ; i++)
 	{
-		for (int j = 0; j < Matrix[i].size() && (b1 || b2) < 2; j++)
+		for (size_t j = 0; j < Matrix[i].size() && (b1 || b2); j++)
 		{
 			if (Matrix[i][j] == C_spawnS)
 			{
