@@ -87,9 +87,17 @@ Spook::Spook(std::vector<std::vector<Cubes>>* matrix):Man(matrix)
 {
 	x = 24;
 	y = 5;
+	color[0] = 50 + rand() % 200;
+	color[1] = 50 + rand() % 200;
+	color[2] = 50 + rand() % 200;
 }
 
 Spook::Spook(const Spook & object):Man(object.Matrix)
+{
+	operator=(object);
+}
+
+const Spook& Spook::operator=(const Spook& object)
 {
 	color[0] = 50 + rand() % 200;
 	color[1] = 50 + rand() % 200;
@@ -97,6 +105,7 @@ Spook::Spook(const Spook & object):Man(object.Matrix)
 	Matrix = object.Matrix;
 	x = object.x;
 	y = object.y;
+	return object;
 }
 
 void Spook::Draw(float w, float h, float wndh)const

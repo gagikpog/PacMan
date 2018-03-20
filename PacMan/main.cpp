@@ -109,17 +109,15 @@ void Draw(float x,float  y,float w,float h, Cubes b)
 			glVertex2f(x + w, y + h);
 			glVertex2f(x, y + h);
 		break;
-	case C_void:break; glColor3ub(0, 180, 200);
-		break;
+	case C_void:break; 
 	case C_food:
 		glColor3ub(255, 255, 255);
 		glVertex2f(x + w*1.5f  , y + h*1.5f);
 		glVertex2f(x + w*2.f, y + h*1.5f);
 		glVertex2f(x + w*2.f, y + h*2.f);
 		glVertex2f(x + w*1.5f  , y + h*2.f);
-	//	break;
-	case C_track:break; glColor3ub(0, 150,200);
 		break;
+	case C_track:break; 
 	case C_drug:glColor3ub(255, 255, 0);
 		glVertex2f(x + w, y + h);
 		glVertex2f(x + w * 2, y + h);
@@ -130,7 +128,6 @@ void Draw(float x,float  y,float w,float h, Cubes b)
 	}
 	glEnd();
 	return;
-
 }
 
 void Display()
@@ -159,9 +156,7 @@ void Display()
 			drawPac(Matrix[0].size()-4*i, Matrix.size()+1, w, h, WndH,0.2f, d_left);
 		}
 	}
-
-
-
+	
 	glColor3f(1, 1, 1);
 	switch (Game)
 	{

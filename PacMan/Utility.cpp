@@ -67,7 +67,6 @@ GLuint LoadBMP(const char* fileName)
 {
 	FILE *file;
 	unsigned char header[54];
-	unsigned int dataPos;
 	unsigned int size;
 	unsigned int width, height;
 	unsigned char *data;
@@ -94,15 +93,12 @@ GLuint LoadBMP(const char* fileName)
 		return false;
 	}
 
-	dataPos = *(int*)&(header[0x0A]);
 	size = *(int*)&(header[0x22]);
 	width = *(int*)&(header[0x12]);
 	height = *(int*)&(header[0x16]);
 
 	if (size == NULL)
 		size = width * height * 3;
-	if (dataPos == NULL)
-		dataPos = 54;
 
 	data = new unsigned char[size];
 

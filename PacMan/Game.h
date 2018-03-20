@@ -1,5 +1,5 @@
 #ifndef GAME_H
-#define GMAE_H
+#define GAME_H
 
 #include "Utility.h"
 
@@ -13,7 +13,7 @@ public:
 
 	int x = 3, y = 5;
 	static int undyingTimer;
-
+//	Point Spawn;
 protected:
 	int Step(bool is_pac);
 
@@ -27,10 +27,12 @@ class Spook:public Man
 public:
 	Spook(std::vector<std::vector<Cubes>>* matrix);
 	Spook(const Spook & object);
+	const Spook& operator=(const Spook& object);
 	void Draw(float w, float h, float wndh)const;
 	int Step();
 	
 private:
+	bool Dead = false;
 	void SetDirect(M_direct d) {}
 	unsigned char color[3];
 };

@@ -27,6 +27,11 @@ enum Game_stat
 	G_game, G_pause, G_win, G_over
 };
 
+struct Point
+{
+	int x = 0;
+	int y = 0;
+};
 //Оператор ! возвращает противоположную сторону
 M_direct& operator!(M_direct& f);
 //Определяет может ли пакман или привидение пройти по этой клетке
@@ -37,8 +42,6 @@ void drawPac(const int& x, const  int& y, const  float& w, const float& h, const
 void TextPrint(float x, float y, const char  *  str);
 
 GLuint LoadBMP(const char* fileName);
-
-
 
 #endif // !GLULILITY
 
