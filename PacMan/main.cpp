@@ -258,7 +258,7 @@ int main(int argc ,char** argv)
 
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
-	glutInitWindowPosition(100, 100);
+	glutInitWindowPosition(50, 50);
 	glutInitWindowSize((int)WndW, (int)WndH + 20);
 
 	glutCreateWindow(ProgramName.c_str());

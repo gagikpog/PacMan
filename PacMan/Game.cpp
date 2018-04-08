@@ -190,20 +190,33 @@ void Spook::Draw(float w, float h, float wndh)const
 int Spook::Step()
 {
 	std::vector<M_direct>arr;
-
-	if (Compare((*Matrix)[y + 1][x], false) && direct != d_up)
-		arr.push_back(d_down);
-
-	if (Compare((*Matrix)[y - 1][x], false) && direct != d_down)
+	if (y + 1 < (*Matrix).size())
+	{
+		if (Compare((*Matrix)[y + 1][x], false) && direct != d_up)
+			arr.push_back(d_down);
+	}else {
+		arr.push_back(d_down); 
+	}
+	if (y - 1 > 0) {
+		if (Compare((*Matrix)[y - 1][x], false) && direct != d_down)
+			arr.push_back(d_up);
+	}else {
 		arr.push_back(d_up);
-
-	if (x < (*Matrix)[0].size() - 1)
+	}
+	if (x < (*Matrix)[0].size() - 1) {
 		if (Compare((*Matrix)[y][x + 1], false) && direct != d_left)
 			arr.push_back(d_right);
+	}else {
+		arr.push_back(d_right);
+	}
 
-	if (x > 0)
+	if (x > 0) 
+	{
 		if (Compare((*Matrix)[y][x - 1], false) && direct != d_right)
 			arr.push_back(d_left);
+	} else{
+		arr.push_back(d_left);
+	}
 
 	if (arr.empty())
 		nextdir = !direct;
