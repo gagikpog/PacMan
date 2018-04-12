@@ -101,7 +101,7 @@ void Draw(float x,float  y,float w,float h, Cubes b)
 	glBegin(GL_QUADS);
 	switch (b)
 	{
-	case C_wall:
+	case C_wall:break;
 		if (mark_textures > 0)break;
 			glColor3ub(0, 200, 200);
 			glVertex2f(x, y);
@@ -130,6 +130,81 @@ void Draw(float x,float  y,float w,float h, Cubes b)
 	return;
 }
 
+bool compare(Cubes b)
+{
+	return b == C_wall || b == C_spawnS;
+}
+
+void DrawMap(int x, int y, float w, float h)
+{
+	if (!compare(Matrix[y][x]))
+		return;
+
+	if ((x - 1 < 0) || (x + 1 >= Matrix[0].size()) || (y - 1 < 0) || (y + 1 >= Matrix.size()))
+		return;
+
+	float Eps = 0.5f;
+
+	glColor3ub(0, 0, 255);
+
+	if (x - 1 >= 0)
+	{
+		if (compare(Matrix[y][x - 1]))
+		{
+			if (!compare(Matrix[y - 1][x - 1]) || !compare(Matrix[y + 1][x - 1]) || !compare(Matrix[y + 1][x]) || !compare(Matrix[y - 1][x]))
+			{
+				glBegin(GL_LINES);
+				glVertex2f(x*w + w / 2, WndH - (y*h + h / 2));
+				glVertex2f(x*w - Eps, WndH - (y*h + h / 2));
+				glEnd();
+			}
+		}
+	}
+
+	if (x + 1 < Matrix[0].size())
+	{
+		if (compare(Matrix[y][x + 1]))
+		{
+			if (!compare(Matrix[y - 1][x + 1]) || !compare(Matrix[y + 1][x + 1]) || !compare(Matrix[y + 1][x])|| !compare(Matrix[y - 1][x]))
+			{
+				glBegin(GL_LINES);
+				glVertex2f(x*w + w / 2, WndH - (y*h + h / 2));
+				glVertex2f(x*w + w + Eps, WndH - (y*h + h / 2));
+				glEnd();
+			}
+		}
+	}
+
+
+	if (y - 1 >= 0)
+	{
+		if (compare(Matrix[y - 1][x]))
+		{
+			if (!compare(Matrix[y - 1][x + 1]) || !compare(Matrix[y - 1][x - 1]) || !compare(Matrix[y][x + 1]) || !compare(Matrix[y][x - 1]))
+			{
+				glBegin(GL_LINES);
+				glVertex2f(x*w + w / 2, WndH - (y*h + h / 2));
+				glVertex2f(x*w + w / 2, WndH - (y*h - Eps));
+				glEnd();
+			}
+		}
+	}
+
+	if (y + 1 < Matrix.size())
+	{
+		if (compare(Matrix[y + 1][x]))
+		{
+			if (!compare(Matrix[y + 1][x + 1]) || !compare(Matrix[y + 1][x - 1]) || !compare(Matrix[y][x + 1]) || !compare(Matrix[y][x - 1]))
+			{
+				glBegin(GL_LINES);
+				glVertex2f(x*w + w / 2, WndH - (y*h + h / 2));
+				glVertex2f(x*w + w / 2, WndH - (y*h + h + Eps));
+				glEnd();
+			}
+		}
+	}
+}
+
 void Display()
 {
 	glClearColor(0, 0, 0, 0);
@@ -146,6 +221,7 @@ void Display()
 			for (size_t j = 0; j < Matrix[i].size(); j++)
 			{
 				Draw(j*w,WndH-i*h-h,w,h,Matrix[i][j]);
+				DrawMap(j, i, w, h);
 			}
 		}
 		for (size_t i = 0; i < Spooks.size(); i++)
@@ -332,7 +408,7 @@ bool NextLevel(bool drop)
 	string resM = ini.getOptionToString("Level" + to_string(nlevel), "map");
 	if (resM == "NAN" || resB == "NAN")
 		return false;
-	mark_textures = LoadBMP(resB.c_str());
+//	mark_textures = LoadBMP(resB.c_str());
 	Open(resM);
 	bool b1 = true,b2 = true;
 	for (size_t i = 0; i < Matrix.size() && (b1 || b2) ; i++)
